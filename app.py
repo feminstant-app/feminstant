@@ -1,40 +1,38 @@
 from flask import Flask, render_template, flash, redirect, url_for
 from flask_sqlalchemy import SQLAlchemy
-from forms import *
+from forms import RegisterForm, LoginForm
 from flask_bcrypt import Bcrypt
 
 
 app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://admin:admin@localhost/FemInstant'
 app.config['SECRET_KEY'] = 'ebd0469c4b70bf520c31c39a'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://admin:admin@localhost/FemInstant'
 db = SQLAlchemy(app)
+db.init_app(app)
 bcrypt = Bcrypt(app)
 
 
 class Employee(db.Model):
     id = db.Column(db.Integer(), primary_key=True)
-    name = db.Column(db.String(length=30), nullable=False, unique=True)
-    location = db.Column(db.String(length=50), nullable=False)
-    # customers = db.relationship('Customer', backref='delivery_driver', lazy=True)
+    name = db.Column(db.String(length=30), nullable=False)
 
 
 class Customer(db.Model):
     id = db.Column(db.Integer(), primary_key=True)
-    user_name = db.Column(db.String(length=15), nullable=False, unique=True)
-    password_hash = db.Column(db.String, nullable=False)
-    customer_name = db.Column(db.String(length=30), nullable=False)
-    customer_email = db.Column(db.String(length=100), nullable=False)
-    location = db.Column(db.String(length=50), nullable=False)
-    # items = db.relationship('Item', backref='owned_user', lazy=True)
-    # delivery_driver_id = db.Column(db.Integer(), db.ForeignKey(Employee.id))
+    name = db.Column(db.String(length=30), nullable=False)
+    email = db.Column(db.String(length=100), nullable=False, unique=True)
+    password_hash = db.Column(db.LargeBinary, nullable=False)
 
     @property
     def password(self):
-        return self.password
+        raise AttributeError("Plaintext password not stored")
 
     @password.setter
-    def password(self, plain_text_password):
-        self.password_hash = bcrypt.generate_password_hash(plain_text_password).decode('utf-8')
+    def password(self, plaintext_password):
+        self.password_hash = bcrypt.generate_password_hash(plaintext_password)
+
+    def password_matches(self, plaintext_password):
+        return bcrypt.check_password_hash(self.password_hash, plaintext_password)
 
 
 class Item(db.Model):
@@ -44,7 +42,6 @@ class Item(db.Model):
     price = db.Column(db.Integer(), nullable=False)
     department = db.Column(db.String(length=75), nullable=False)
     description = db.Column(db.String(length=1500), nullable=False)
-    # owner = db.Column(db.Integer(), db.ForeignKey(Customer.id))
 
     def __repr__(self):
         return f'Item {self.name}'
@@ -60,36 +57,29 @@ def home_page():
     return render_template('index.html')
 
 
-@app.route('/')
-@app.route('/login')
+@app.route('/login', methods=['GET', 'POST'])
 def login_page():
-    return render_template('login.html')
-
-# @app.route('/register')
-# def register():
-#     form = RegisterForm()
-#     return render_template('register.html', form=form)
+    form = LoginForm()
+    if form.validate_on_submit():
+        matching_user = Customer.query.filter_by(email=form.email.data).first()
+        if matching_user and matching_user.password_matches(form.password.data):
+            print("Success!")
+            return redirect(url_for('home_page'))
+    return render_template('login.html', title='Log in', form=form)
 
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     form = RegisterForm()
     if form.validate_on_submit():
-        user_to_create = Customer(customer_name=form.customer_name,
-                                  user_name=form.user_name.data,
-                                  email=form.customer_email.data,
-                                  password_hash=form.password.data)
-
+        user_to_create = Customer(name=form.name.data, email=form.email.data)
+        user_to_create.password = form.password.data
         db.session.add(user_to_create)
         db.session.commit()
-        return redirect(url_for('home_page'))
-    if form.errors != {}:  # If there are not errors from the validations
-        for err_msg in form.errors.values():
-            flash(f'There was an error with creating a user: {err_msg}', category='danger')
-
-        # flash(f'Account created successfully for {form.username.data}', category='success')
+        flash(f'Account created successfully for {form.name.data}', category='success')
         return redirect(url_for('login_page'))
     return render_template('register.html', title='Register', form=form)
+
 
 @app.route('/')
 @app.route('/checkout')
