@@ -7,27 +7,40 @@
             {{form.hidden_tag()}}
     <fieldset>
         <legend class="border-bottom mb-4"> Please create an account </legend>
+
         <div class="form-group">
-            {{form.username.label(class="form-control-label")}}
-            {%if form.username.errors%}
-                {{form.username(class="form-control form-control-1g is-invalid")}}
-                    {%for error in form.username.errors%}
+            {{form.customer_name.label(class="form-control-label")}}
+            {%if form.customer_name.errors%}
+                {{form.customer_name(class="form-control form-control-1g is-invalid")}}
+                    {%for error in form.customer_name.errors%}
                         <span>{{error}}</span>
                     {%endfor%}
                     {% else %}
-                        {{form.username(class="form-control form-control-1g")}}
+                        {{form.customer_name(class="form-control form-control-1g")}}
             {%endif%}
         </div>
 
         <div class="form-group">
-            {{form.email.label(class="form-control-label")}}
-            {%if form.email.errors%}
-                {{form.email(class="form-control form-control-1g is-invalid")}}
-                    {%for error in form.email.errors%}
+            {{form.user_name.label(class="form-control-label")}}
+            {%if form.user_name.errors%}
+                {{form.user_name(class="form-control form-control-1g is-invalid")}}
+                    {%for error in form.user_name.errors%}
                         <span>{{error}}</span>
                     {%endfor%}
                     {% else %}
-                        {{form.email(class="form-control form-control-1g")}}
+                        {{form.user_name(class="form-control form-control-1g")}}
+            {%endif%}
+        </div>
+
+        <div class="form-group">
+            {{form.customer_email.label(class="form-control-label")}}
+            {%if form.customer_email.errors%}
+                {{form.customer_email(class="form-control form-control-1g is-invalid")}}
+                    {%for error in form.customer_email.errors%}
+                        <span>{{error}}</span>
+                    {%endfor%}
+                    {% else %}
+                        {{form.customer_email(class="form-control form-control-1g")}}
             {%endif%}
         </div>
 

@@ -1,32 +1,40 @@
 from flask import Flask, render_template, flash, redirect, url_for
 from flask_sqlalchemy import SQLAlchemy
-from fforms import RegisterForm
-
+from forms import *
+from flask_bcrypt import Bcrypt
 
 
 app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://admin:admin@localhost/feminstant'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://admin:admin@localhost/FemInstant'
 app.config['SECRET_KEY'] = 'ebd0469c4b70bf520c31c39a'
 db = SQLAlchemy(app)
-
+bcrypt = Bcrypt(app)
 
 
 class Employee(db.Model):
     id = db.Column(db.Integer(), primary_key=True)
     name = db.Column(db.String(length=30), nullable=False, unique=True)
     location = db.Column(db.String(length=50), nullable=False)
-    customers = db.relationship('Customer', backref='delivery_driver', lazy=True)
+    # customers = db.relationship('Customer', backref='delivery_driver', lazy=True)
 
 
 class Customer(db.Model):
     id = db.Column(db.Integer(), primary_key=True)
     user_name = db.Column(db.String(length=15), nullable=False, unique=True)
-    password = db.Column(db.String(length=30), nullable=False)
+    password_hash = db.Column(db.String, nullable=False)
     customer_name = db.Column(db.String(length=30), nullable=False)
     customer_email = db.Column(db.String(length=100), nullable=False)
     location = db.Column(db.String(length=50), nullable=False)
-    items = db.relationship('Item', backref='owned_user', lazy=True)
-    delivery_driver_id = db.Column(db.Integer(), db.ForeignKey(Employee.id))
+    # items = db.relationship('Item', backref='owned_user', lazy=True)
+    # delivery_driver_id = db.Column(db.Integer(), db.ForeignKey(Employee.id))
+
+    @property
+    def password(self):
+        return self.password
+
+    @password.setter
+    def password(self, plain_text_password):
+        self.password_hash = bcrypt.generate_password_hash(plain_text_password).decode('utf-8')
 
 
 class Item(db.Model):
@@ -36,14 +44,14 @@ class Item(db.Model):
     price = db.Column(db.Integer(), nullable=False)
     department = db.Column(db.String(length=75), nullable=False)
     description = db.Column(db.String(length=1500), nullable=False)
-    owner = db.Column(db.Integer(), db.ForeignKey(Customer.id))
+    # owner = db.Column(db.Integer(), db.ForeignKey(Customer.id))
+
+    def __repr__(self):
+        return f'Item {self.name}'
 
 
-#     def __repr__(self):
-#         return f'Item {self.name}'
-# #
-# with app.app_context():
-#     db.create_all()
+with app.app_context():
+    db.create_all()
 
 
 @app.route('/')
@@ -52,28 +60,41 @@ def home_page():
     return render_template('index.html')
 
 
-# @app.route('/')
-# @app.route('/login')
-# def login_page():
-#     return render_template('login.html')
+@app.route('/')
+@app.route('/login')
+def login_page():
+    return render_template('login.html')
 
 # @app.route('/register')
 # def register():
 #     form = RegisterForm()
 #     return render_template('register.html', form=form)
 
-@app.route('/register', methods=['POST', 'GET'])
+
+@app.route('/register', methods=['GET', 'POST'])
 def register():
     form = RegisterForm()
     if form.validate_on_submit():
-        flash(f'Account created successfully for {form.username.data}', category='success')
-        return redirect(url_for('login.h1tml'))
+        user_to_create = Customer(customer_name=form.customer_name,
+                                  user_name=form.user_name.data,
+                                  email=form.customer_email.data,
+                                  password_hash=form.password.data)
+
+        db.session.add(user_to_create)
+        db.session.commit()
+        return redirect(url_for('home_page'))
+    if form.errors != {}:  # If there are not errors from the validations
+        for err_msg in form.errors.values():
+            flash(f'There was an error with creating a user: {err_msg}', category='danger')
+
+        # flash(f'Account created successfully for {form.username.data}', category='success')
+        return redirect(url_for('login_page'))
     return render_template('register.html', title='Register', form=form)
 
-# @app.route('/')
-# @app.route('/checkout')
-# def checkout_page():
-#     return render_template('checkout.html')
+@app.route('/')
+@app.route('/checkout')
+def checkout_page():
+    return render_template('checkout.html')
 #
 #
 # @app.route('/products')
