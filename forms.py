@@ -4,7 +4,6 @@ from wtforms.validators import DataRequired, length, equal_to, email, Validation
 from app import Customer
 
 
-
 class RegisterForm(FlaskForm):
 
         def validate_username(self, username_to_check):
