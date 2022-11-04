@@ -2,7 +2,7 @@ from flask import Flask, render_template, flash, redirect, url_for
 from flask_sqlalchemy import SQLAlchemy
 from forms import RegisterForm, LoginForm, CheckoutForm
 from flask_bcrypt import Bcrypt
-from flask_login import LoginManager, login_user, UserMixin
+from flask_login import LoginManager, login_user, UserMixin, logout_user, login_required
 
 
 app = Flask(__name__)
@@ -84,7 +84,7 @@ def login_page():
         if matching_user and matching_user.password_matches(form.password.data):
             login_user(matching_user)
             flash('Success! You have logged in', category='success')
-            return redirect(url_for('products_page'))
+            return redirect(url_for('makeup_products_page'))
         else:
             flash('Username and Password do not match', category='danger')
     return render_template('login.html', title='Log in', form=form)
@@ -97,12 +97,14 @@ def register():
         user_to_create = Customer(name=form.name.data, email=form.email.data, password=form.password.data)
         db.session.add(user_to_create)
         db.session.commit()
+        login_user(user_to_create)
         flash(f'Account created successfully for {form.name.data}', category='success')
-        return redirect(url_for('login_page'))
+        return redirect(url_for('profile_page'))
     return render_template('register.html', title='Register', form=form)
 
 
 @app.route('/checkout', methods=['GET', 'POST'])
+@login_required
 def checkout_page():
     form = CheckoutForm()
     if form.validate_on_submit():
@@ -117,8 +119,41 @@ def checkout_page():
 
 
 @app.route('/profile')
-def profile():
+def profile_page():
     return render_template('profile.html')
+
+
+@app.route('/hygiene')
+def hygiene_products_page():
+    items = db.session.query(Item).filter(Item.department == "Feminine Hygiene")
+    # print(items)
+    return render_template('Hygiene.html', items=items)
+
+
+@app.route('/makeup')
+def makeup_products_page():
+    items = db.session.query(Item).filter(Item.department == "Makeup")
+    # print(items)
+    return render_template('Makeup.html', items=items)
+
+
+@app.route('/skincare')
+def skincare_products_page():
+    items = db.session.query(Item).filter(Item.department == "Skincare")
+    # print(items)
+    return render_template('skincare.html', items=items)
+
+
+@app.route('/payment')
+def payment_page():
+    return render_template('payment.html')
+
+
+@app.route('/logout')
+def logout_page():
+    logout_user()
+    flash('You have logged out successfully', category='info')
+    return redirect(url_for('home_page'))
 
 
 if __name__ == '__main__':
