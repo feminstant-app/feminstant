@@ -15,3 +15,15 @@ class LoginForm(FlaskForm):
     email = StringField(label='Email', validators=[DataRequired(), email()])
     password = PasswordField(label='Password', validators=[DataRequired(), length(min=6)])
     submit = SubmitField(label='Login')
+
+
+class CheckoutForm(FlaskForm):
+    inputAddress1 = StringField(label='Address Line 1', validators=[DataRequired()])
+    inputAddress2 = StringField(label='Address Line 2', validators=[DataRequired()])
+    inputCity = StringField(label='City', validators=[DataRequired()])
+    inputZip = StringField(label='Post Code', validators=[DataRequired()])
+    submit = SubmitField(label='Checkout')
+
+
+class PaymentForm(FlaskForm):
+    pass

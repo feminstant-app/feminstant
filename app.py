@@ -1,7 +1,8 @@
 from flask import Flask, render_template, flash, redirect, url_for
 from flask_sqlalchemy import SQLAlchemy
-from forms import RegisterForm, LoginForm
+from forms import RegisterForm, LoginForm, CheckoutForm
 from flask_bcrypt import Bcrypt
+from flask_login import LoginManager, login_user, UserMixin
 
 
 app = Flask(__name__)
@@ -10,6 +11,12 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://admin:admin@localhost/F
 db = SQLAlchemy(app)
 db.init_app(app)
 bcrypt = Bcrypt(app)
+login_manager = LoginManager(app)
+
+
+@login_manager.user_loader
+def load_user(user_id):
+    return Customer.query.get(int(user_id))
 
 
 class Employee(db.Model):
@@ -17,7 +24,7 @@ class Employee(db.Model):
     name = db.Column(db.String(length=30), nullable=False)
 
 
-class Customer(db.Model):
+class Customer(db.Model, UserMixin):
     id = db.Column(db.Integer(), primary_key=True)
     name = db.Column(db.String(length=30), nullable=False)
     email = db.Column(db.String(length=100), nullable=False, unique=True)
@@ -34,6 +41,9 @@ class Customer(db.Model):
     def password_matches(self, plaintext_password):
         return bcrypt.check_password_hash(self.password_hash, plaintext_password)
 
+    # def password_matches(self, plaintext_password):
+    #     return self.password_hash == str.encode(plaintext_password)
+
 
 class Item(db.Model):
     id = db.Column(db.Integer(), primary_key=True)
@@ -45,6 +55,15 @@ class Item(db.Model):
 
     def __repr__(self):
         return f'Item {self.name}'
+
+
+class Checkout(db.Model):
+    id = db.Column(db.Integer(), primary_key=True)
+    # cust_id = db.Column(db.Integer, db.ForeignKey(Customer.id))
+    inputAddress1 = db.Column(db.String(length=50), nullable=False)
+    inputAddress2 = db.Column(db.String(length=50), nullable=False)
+    inputCity = db.Column(db.String(length=30), nullable=False)
+    inputZip = db.Column(db.String(length=30), nullable=False)
 
 
 with app.app_context():
@@ -63,8 +82,11 @@ def login_page():
     if form.validate_on_submit():
         matching_user = Customer.query.filter_by(email=form.email.data).first()
         if matching_user and matching_user.password_matches(form.password.data):
-            print("Success!")
-            return redirect(url_for('home_page'))
+            login_user(matching_user)
+            flash('Success! You have logged in', category='success')
+            return redirect(url_for('products_page'))
+        else:
+            flash('Username and Password do not match', category='danger')
     return render_template('login.html', title='Log in', form=form)
 
 
@@ -72,8 +94,7 @@ def login_page():
 def register():
     form = RegisterForm()
     if form.validate_on_submit():
-        user_to_create = Customer(name=form.name.data, email=form.email.data)
-        user_to_create.password = form.password.data
+        user_to_create = Customer(name=form.name.data, email=form.email.data, password=form.password.data)
         db.session.add(user_to_create)
         db.session.commit()
         flash(f'Account created successfully for {form.name.data}', category='success')
@@ -81,53 +102,23 @@ def register():
     return render_template('register.html', title='Register', form=form)
 
 
-@app.route('/')
-@app.route('/checkout')
+@app.route('/checkout', methods=['GET', 'POST'])
 def checkout_page():
-    return render_template('checkout.html')
-#
-#
-# @app.route('/products')
-# def products_page():
-#     items = [
-#         {'productID': 1, 'item_name': 'Cerave Hydrating Cleanser with Hyaluronic Acid', 'quantity': '50',
-#          'price': '9.99', 'Location': 'North London'},
-#         {'productID': 2, 'item_name': 'Simple Kind To Skin Cleansing Wipes Biodegradable X50', 'quantity': '50',
-#          'price': '9.99', 'Location': 'North London'},
-#         {'productID': 3, 'item_name': 'Simple Kind to Skin Refreshing Facial Wash Gel 50ml', 'quantity': '50',
-#          'price': '9.99', 'Location': 'North London'},
-#         {'productID': 4, 'item_name': 'CeraVe Moisturising Lotion For Dry to Very Dry Skin 236ml', 'quantity': '50',
-#          'price': '9.99', 'Location': 'North London'},
-#         {'productID': 5, 'item_name': "Burt's Bees® Beeswax Lip Balm 4.25g", 'quantity': '50', 'price': '9.99',
-#          'Location': 'North London'},
-#         {'productID': 6, 'item_name': "NYX Professional Makeup Setting Spray Matte", 'quantity': '50', 'price': '9.99',
-#          'Location': 'North London'},
-#         {'productID': 7, 'item_name': "NYX Professional Makeup Micro Brow Pencil (Various Shades)", 'quantity': '50',
-#          'price': '9.99',
-#          'Location': 'North London'},
-#         {'productID': 8, 'item_name': "NYX Professional Makeup Butter Gloss - Praline", 'quantity': '50',
-#          'price': '9.99', 'Location': 'North London'},
-#         {'productID': 9, 'item_name': "Maybelline Lash Sensational Sky High Mascara 01 Black", 'quantity': '50',
-#          'price': '9.99', 'Location': 'North London'},
-#         {'productID': 10, 'item_name': "NYX Professional Makeup Suede Matte Lip Liner (Various Shades)",
-#          'quantity': '50', 'price': '9.99', 'Location': 'North London'},
-#         {'productID': 11, 'item_name': "Always Maxi Long Plus Sanitary Towels x12", 'quantity': '50', 'price': '9.99',
-#          'Location': 'North London'},
-#         {'productID': 12, 'item_name': "Always Ultra Secure Night Duo Sanitary Towels Multipack 18", 'quantity': '50',
-#          'price': '9.99', 'Location': 'North London'},
-#         {'productID': 13, 'item_name': "Always Sensitive Normal Ultra (Size 1) Sanitary Towels x16", 'quantity': '50',
-#          'price': '9.99', 'Location': 'North London'},
-#         {'productID': 14, 'item_name': "Tampax Compak Regular Tampons 18", 'quantity': '50', 'price': '9.99',
-#          'Location': 'North London'},
-#         {'productID': 15, 'item_name': "OrganiCup, Size A, Menstrual Cup, 1 unit", 'quantity': '50', 'price': '9.99',
-#          'Location': 'North London'},
-#         {'productID': 16, 'item_name': "Bodyform So Slim Pantyliners 34 Pack", 'quantity': '50', 'price': '9.99',
-#          'Location': 'North London'},
-#         {'productID': 17, 'item_name': "Tampax Compak Lite Applicator Tampon Single 18PK", 'quantity': '50',
-#          'price': '9.99', 'Location': 'North London'},
-#
-#     ]
-#     return render_template('products.html', items=items)
+    form = CheckoutForm()
+    if form.validate_on_submit():
+        checkout_information = Checkout(inputAddress1=form.inputAddress1.data,
+                                        inputAddress2=form.inputAddress2.data, inputCity=form.inputCity.data,
+                                        inputZip=form.inputZip.data)
+        db.session.add(checkout_information)
+        db.session.commit()
+        flash("Checkout complete", category='success')
+        return redirect(url_for('home_page'))
+    return render_template('checkout.html', title='Checkout', form=form)
+
+
+@app.route('/profile')
+def profile():
+    return render_template('profile.html')
 
 
 if __name__ == '__main__':
