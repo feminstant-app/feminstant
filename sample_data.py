@@ -24,10 +24,10 @@ with app.app_context():
     db.session.commit()
 
     employees = [
-        Employee(name='Sam Jones', location='North London'),
-        Employee(name='John Smith', location='East London'),
-        Employee(name='Tom Morgan', location='South London'),
-        Employee(name='James Harding', location='West London'),
+        Employee(name='Sam Jones'),
+        Employee(name='John Smith'),
+        Employee(name='Tom Morgan'),
+        Employee(name='James Harding'),
     ]
 
     for employee in employees:

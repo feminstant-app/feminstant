@@ -1,0 +1,39 @@
+{% extends 'base.html' %}
+{% block title %}
+
+PRODUCTS
+
+{% endblock %}
+
+{% block content %}
+    <table class="table table-hover table-dark">
+    <thead>
+        <tr>
+            <!-- Your Columns HERE -->
+            <th scope="col">Product ID</th>
+            <th scope="col">Product Name</th>
+            <th scope="col">Inventory</th>
+            <th scope="col">Price</th>
+            <th scope="col">Description</th>
+
+        </tr>
+    </thead>
+    <tbody>
+        <!-- rows inside the table HERE: -->
+        {% for item in items %}
+            <tr>
+                <td>{{ item.id }}</td>
+                <td>{{ item.name }}</td>
+                <td>{{ item.quantity }}</td>
+                <td>{{ item.price }}</td>
+                <td>{{ item.description }}</td>
+                <td>
+                    <button class="btn btn-outline btn-success">Purchase This Item</button>
+                </td>
+            </tr>
+        {% endfor %}
+
+    </tbody>
+</table>
+
+{% endblock %}

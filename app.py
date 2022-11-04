@@ -57,6 +57,19 @@ class Item(db.Model):
         return f'Item {self.name}'
 
 
+class Cart(db.Model):
+    cart_id = db.Column(db.Integer(), primary_key=True)
+    cust_id = db.Column(db.Integer, db.ForeignKey(Customer.id))
+
+
+class CartDetail(db.Model):
+    cartDetail_id = db.Column(db.Integer(), primary_key=True)
+    cart_id = db.Column(db.Integer(), db.ForeignKey(Cart.cart_id))
+    cust_id = db.Column(db.Integer, db.ForeignKey(Customer.id))
+    item_id = db.Column(db.Integer, db.ForeignKey(Item.id))
+    quantity = db.Column(db.Integer)
+
+
 class Checkout(db.Model):
     id = db.Column(db.Integer(), primary_key=True)
     # cust_id = db.Column(db.Integer, db.ForeignKey(Customer.id))
@@ -114,6 +127,27 @@ def checkout_page():
         flash("Checkout complete", category='success')
         return redirect(url_for('home_page'))
     return render_template('checkout.html', title='Checkout', form=form)
+
+
+@app.route('/hygiene')
+def hygiene_products_page():
+    items = db.session.query(Item).filter(Item.department == "Feminine Hygiene")
+    # print(items)
+    return render_template('Hygiene.html', items=items)
+
+
+@app.route('/makeup')
+def makeup_products_page():
+    items = db.session.query(Item).filter(Item.department == "Makeup")
+    # print(items)
+    return render_template('Makeup.html', items=items)
+
+
+@app.route('/skincare')
+def skincare_products_page():
+    items = db.session.query(Item).filter(Item.department == "Skincare")
+    # print(items)
+    return render_template('skincare.html', items=items)
 
 
 @app.route('/profile')
