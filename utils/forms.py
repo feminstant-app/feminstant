@@ -1,5 +1,5 @@
 from flask_wtf import FlaskForm
-from wtforms import StringField, PasswordField, SubmitField, IntegerField
+from wtforms import StringField, PasswordField, SubmitField, ValidationError
 from wtforms.validators import DataRequired, length, equal_to, email
 
 
@@ -18,12 +18,8 @@ class LoginForm(FlaskForm):
 
 
 class CheckoutForm(FlaskForm):
-    inputAddress1 = StringField(label='Address Line 1', validators=[DataRequired()])
-    inputAddress2 = StringField(label='Address Line 2', validators=[DataRequired()])
-    inputCity = StringField(label='City', validators=[DataRequired()])
-    inputZip = StringField(label='Post Code', validators=[DataRequired()])
-    submit = SubmitField(label='Checkout')
-
-
-class PaymentForm(FlaskForm):
-    submit = SubmitField(label='Confirm Pay')
+    address_line_1 = StringField(label='Address Line 1', validators=[DataRequired()])
+    address_line_2 = StringField(label='Address Line 2', validators=[DataRequired()])
+    city = StringField(label='City', validators=[DataRequired()])
+    postcode = StringField(label='Post Code', validators=[DataRequired()])
+    submit = SubmitField(label='Go to Payment')

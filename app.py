@@ -1,10 +1,13 @@
 from flask import flash, redirect, url_for, request, session
-from flask_login import login_user, logout_user
-from forms import RegisterForm, LoginForm, CheckoutForm
+from flask_login import login_user, logout_user, current_user
+from utils.forms import RegisterForm, LoginForm, CheckoutForm
+from datetime import date
+
 from __init__ import app, db, login_manager
-from ex import stripe_keys
-from basket import initialise_basket, render_template_with_basket_quantity, get_items_from_basket, increase_item_quantity_in_basket, decrease_item_quantity_in_basket, get_basket_total
-from models import Item, Customer
+from utils.basket import initialise_basket, render_template_with_basket_quantity, get_items_from_basket, \
+    increase_item_quantity_in_basket, decrease_item_quantity_in_basket, get_basket_total
+from utils.models import Item, Customer, Order, order_items
+from config import STRIPE_PUBLISHABLE_KEY
 
 
 @login_manager.user_loader
@@ -17,6 +20,12 @@ def load_user(user_id):
 @initialise_basket
 def home_page():
     return render_template_with_basket_quantity('index.html')
+
+
+@app.route('/about')
+@initialise_basket
+def about_page():
+    return render_template_with_basket_quantity('about.html')
 
 
 @app.route('/login', methods=['GET', 'POST'])
@@ -57,9 +66,10 @@ def register():
 def products_page():
     department = request.args.get('department')
     items = db.session.query(Item)
+    basket = session['basket']
     if department in ['Skincare', 'Makeup', 'Feminine Hygiene']:
         items = items.filter_by(department=department)
-    return render_template_with_basket_quantity('products.html', items=items, department=department)
+    return render_template_with_basket_quantity('products.html', department=department, items=items, basket=basket)
 
 
 @app.route('/increase_quantity/<item_id>', methods=['POST'])
@@ -76,36 +86,67 @@ def decrease_quantity_in_basket(item_id):
     return redirect(request.form.get('referrer'))
 
 
-# TODO
 @app.route('/basket')
 @initialise_basket
 def basket_page():
-    items = get_items_from_basket()
-    basket_total = get_basket_total()
+    items = get_items_from_basket(session['basket'])
+    basket_total = get_basket_total(session['basket'])
     return render_template_with_basket_quantity('basket.html', items=items, basket_total=basket_total)
 
 
-# TODO
-@app.route('/checkout', methods=['GET', 'POST'])
+@app.route('/checkout/address', methods=['GET', 'POST'])
 @initialise_basket
-def checkout_page():
+def checkout_address_page():
     form = CheckoutForm()
+    basket_total = get_basket_total(session['basket'])
     if form.validate_on_submit():
-        checkout_information = Checkout(inputAddress1=form.inputAddress1.data,
-                                        inputAddress2=form.inputAddress2.data, inputCity=form.inputCity.data,
-                                        inputZip=form.inputZip.data)
-        db.session.add(checkout_information)
-        db.session.commit()
-        flash("Checkout complete", category='success')
-        return redirect(url_for('home_page'))
-    return render_template_with_basket_quantity('checkout.html', title='Checkout', form=form)
+        session['address'] = {
+            'address_line_1': form.address_line_1.data,
+            'address_line_2': form.address_line_2.data,
+            'city': form.city.data,
+            'postcode': form.postcode.data,
+        }
+        return redirect(url_for('checkout_payment_page'))
+    return render_template_with_basket_quantity('checkout_address.html', title='Checkout', form=form, basket_total=basket_total)
 
 
-# TODO
-@app.route('/payment')
+@app.route('/checkout/payment')
 @initialise_basket
-def payment_page():
-    return render_template_with_basket_quantity('payment.html')
+def checkout_payment_page():
+    if 'address' not in session:
+        return redirect(url_for('checkout_address_page'))
+    basket_total = get_basket_total(session['basket'])
+    return render_template_with_basket_quantity('checkout_payment.html', key=STRIPE_PUBLISHABLE_KEY, basket_total=basket_total)
+
+
+@app.route('/checkout/complete', methods=['GET', 'POST'])
+def checkout_complete_page():
+    if request.method == 'POST':
+        items = get_items_from_basket(session['basket'])
+        order = Order(user_id=current_user.id if current_user.is_authenticated else None,
+                      date=date.today(),
+                      address_line_1=session['address']['address_line_1'],
+                      address_line_2=session['address']['address_line_2'],
+                      city=session['address']['city'],
+                      postcode=session['address']['postcode'])
+        db.session.add(order)
+        db.session.commit()
+        for item, quantity in items.items():
+            order_item_additions = order_items.insert().values(
+                order_id=order.id,
+                item_id=item.id,
+                quantity=quantity,
+            )
+            db.session.execute(order_item_additions)
+        db.session.commit()
+        session['previous_basket'] = session['basket']
+        session['basket'] = {}
+        return redirect(url_for('checkout_complete_page'))
+    if 'previous_basket' not in session:
+        return redirect(url_for('home_page'))
+    items = get_items_from_basket(session['previous_basket'])
+    basket_total = get_basket_total(session['previous_basket'])
+    return render_template_with_basket_quantity('checkout_complete.html', items=items, basket_total=basket_total)
 
 
 @app.route('/logout', methods=['POST'])
@@ -113,37 +154,6 @@ def logout_page():
     logout_user()
     flash('You have logged out successfully', category='success')
     return redirect(url_for('home_page'))
-
-
-# @app.route('/map')
-# def map_func():
-#     return render_template('map.html', apikey=api_key, latitude=latitude, longitude=longitude, address=address)
-
-
-@app.route('/pay')
-@initialise_basket
-def pay():
-    return render_template_with_basket_quantity('checkout1.html', key=stripe_keys['publishable_key'])
-
-
-@app.route('/charge', methods=['POST'])
-def charge():
-    # Amount in cents
-    amount = 500
-
-    customer = stripe.Customer.create(
-        email='customer@example.com',
-        source=request.form['stripeToken']
-    )
-
-    charge = stripe.Charge.create(
-        customer=customer.id,
-        amount=amount,
-        currency='usd',
-        description='Flask Charge'
-    )
-
-    return render_template_with_basket_quantity('charge.html', amount=amount)
 
 
 if __name__ == '__main__':

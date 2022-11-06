@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}{% endblock %}
+{% block content %}
+<div class="background-container"></div>
+  <div class="container mt-5" style="width: 576px; max-width: 90%; z-index: 5;">
+    {% include 'includes/flashed_messages.html' %}
+  </div>
+  <div class="container py-4">
+    <div class="card mx-auto border-0" style="max-width: 576px;">
+      <div class="card-body">
+        <form method="POST" action="{{ url_for('checkout_complete_page') }}" class="text-center">
+          <h1>Thanks, please pay:</h1>
+          <h2 class="display-4 mb-3">£{{ basket_total }}</h2>
+          <script src="https://checkout.stripe.com/checkout.js" class="stripe-button"
+                  data-key="{{ key }}"
+                  data-description="FemInstant Purchase"
+                  data-amount="{{ basket_total * 100 }}"
+                  data-currency="gbp"
+                  data-locale="auto"></script>
+        </form>
+      </div>
+    </div>
+  </div>
+  <script>
+    const paymentButton = document.querySelector('.stripe-button-el')
+    paymentButton.classList.add('btn')
+    paymentButton.classList.add('btn-primary')
+    paymentButton.classList.remove('stripe-button-el')
+    paymentButton.firstChild.style.minHeight = ''
+  </script>
+{% endblock %}

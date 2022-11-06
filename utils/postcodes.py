@@ -35,7 +35,7 @@ import time
 
 latitude = 12.9716
 longitude = 77.5946
-file_name = 'data.csv'
+file_name = '../data.csv'
 
 
 def generate_random_data(lat, lon, num_rows, file_name):
