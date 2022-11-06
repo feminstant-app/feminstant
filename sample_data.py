@@ -1,5 +1,5 @@
 from __init__ import app, db
-from models import Item, Employee, Customer
+from utils.models import Item, Customer
 
 
 with app.app_context():
@@ -23,17 +23,6 @@ with app.app_context():
 
     for item in items:
         db.session.add(item)
-    db.session.commit()
-
-    employees = [
-        Employee(name='Sam Jones'),
-        Employee(name='John Smith'),
-        Employee(name='Tom Morgan'),
-        Employee(name='James Harding'),
-    ]
-
-    for employee in employees:
-        db.session.add(employee)
     db.session.commit()
 
     customers = [

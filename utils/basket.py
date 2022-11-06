@@ -1,5 +1,5 @@
 from flask import session, render_template
-from models import Item
+from utils.models import Item
 
 
 def initialise_basket(function):
@@ -16,8 +16,7 @@ def render_template_with_basket_quantity(*args, **kwargs):
     return render_template(*args, **kwargs, basket_quantity=basket_quantity)
 
 
-def get_items_from_basket():
-    basket = session['basket']
+def get_items_from_basket(basket):
     return {Item.query.filter_by(id=item_id).first(): quantity for item_id, quantity in basket.items()}
 
 
@@ -45,6 +44,6 @@ def decrease_item_quantity_in_basket(item_id):
     session['basket'] = basket
 
 
-def get_basket_total():
-    items = get_items_from_basket()
+def get_basket_total(basket):
+    items = get_items_from_basket(basket)
     return sum((item.price * quantity for item, quantity in items.items()))

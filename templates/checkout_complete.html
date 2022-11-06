@@ -8,21 +8,14 @@
   <div class="container py-4">
     <div class="card mx-auto border-0" style="max-width: 576px;">
       <div class="card-body">
-        <h1 class="text-center">Your Basket</h1>
+        <h1 class="text-center">Thanks for your order!</h1>
+        <h3 class="text-center">You ordered:</h3>
         <ul class="list-group">
           {% for item, quantity in items.items() %}
             <li class="list-group-item d-flex justify-content-between align-items-start">
               <div class="me-auto">
                 <div class="fw-bold fs-5 mb-1">{{ item.name }}</div>
-                <form class="d-flex" method="post">
-                  <button type="submit" formaction="{{ url_for('decrease_quantity_in_basket', item_id=item.id) }}"
-                          name="referrer" value="{{ url_for('basket_page') }}"
-                          class="btn btn-sm btn-primary rounded-circle p-0" style="width: 1.5rem; height: 1.5rem;">&ndash;</button>
-                  <span class="mx-2">{{ quantity }}</span>
-                  <button type="submit" formaction="{{ url_for('increase_quantity_in_basket', item_id=item.id) }}"
-                          name="referrer" value="{{ url_for('basket_page') }}"
-                          class="btn btn-sm btn-success rounded-circle p-0" style="width: 1.5rem; height: 1.5rem;">+</button>
-                </form>
+                Quantity: <strong>{{ quantity }}</strong>
               </div>
               <div class="text-end ms-3" style="flex-shrink: 0;">
                 <div><span class="text-primary">Each:</span> <strong>£{{ item.price }}</strong></div>
@@ -35,7 +28,7 @@
         </ul>
         <p class="lead text-center mt-2 mb-0">Total price</p>
         <input type="text" class="form-control form-control-lg text-center" value="£{{ basket_total }}" readonly>
-        <a role="button" href="{{ url_for('checkout_address_page') }}" class="btn btn-primary d-block mt-3 mx-auto">Proceed to checkout</a>
+        <a role="button" href="{{ url_for('home_page') }}" class="btn btn-primary d-block mt-3 mx-auto">Back to home</a>
       </div>
     </div>
   </div>
