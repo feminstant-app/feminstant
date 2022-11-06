@@ -1,112 +1,63 @@
 {% extends "base.html" %}
 {% block title %}Home{% endblock %}
 {% block content %}
-
-<div id="carouselExampleIndicators" class="carousel slide carousel-fade" data-bs-ride="carousel">
-    <ol class="carousel-indicators">
-      <li data-bs-target="#carouselExampleIndicators" data-bs-slide-to="0" class="active"></li>
-      <li data-bs-target="#carouselExampleIndicators" data-bs-slide-to="1"></li>
-      <li data-bs-target="#carouselExampleIndicators" data-bs-slide-to="2"></li>
-    </ol>
-
-  <div class="carousel-inner">
-      <div class="carousel-item active"
-           style="height:36rem;
-                  background:#FADADD;
-                  text-shadow: 3px 3px 2px #787273;
-                  position: relative;
-                  font-size: 3rem;">
-          <div class="overlay-image"
-               style="background-image: url(static/images/makeup.jpg);
-                      position: absolute;
-                      bottom:0;
-                      left:0;
-                      right:0;
-                      top:0;
-                      background-position:center;
-                      background-size: cover;
-                      opacity: 0.7;">
-          </div>
-        <div class="container" style="position: absolute; bottom:0; left:0; right:0; padding-bottom:100px;">
-          <h1 style="text-transform: uppercase;">Feminstant</h1>
-          <p style="text-transform: uppercase;">Feminine products in an Instant</p>
-          <a href="{{ url_for('makeup_products_page') }}" class ="btn"
-             style="font-size: 2rem;
-                    text-transform: uppercase;
-                    justify-content: center;
-                    display: flex;
-                    color: black;
-                    background-color: pink;
-                    letter-spacing: .1rem;">Shop
-          </a>
-        </div>
-      </div>
-
-      <div class="carousel-item"
-           style="height:36rem;
-                  background:#FADADD;
-                  text-shadow: 3px 3px 2px #787273;
-                  position: relative;
-                  font-size: 3rem;
-                  background-position:center;
-                  background-size: cover;
-                  background-image: url(static/images/cerave.jpg);">
-        <div class="container" style="position: absolute; bottom:0; left:0; right:0; padding-bottom:100px;">
-          <h1 style="font-size: 2rem;
-                     text-transform: uppercase;
-                     justify-content: center;
-                     display: flex;
-                     color: black;
-                     background-color: pink;
-                     letter-spacing: .1rem;">Skincare
-          </h1>
-          <a href="{{ url_for('skincare_products_page') }}" class ="btn"
-             style="font-size: 2rem;
-                    text-transform: uppercase;
-                    justify-content: center;
-                    display: flex;
-                    color: black;
-                    background-color: pink;
-                    letter-spacing: .1rem;">Shop
-          </a>
-        </div>
-      </div>
-
-      <div class="carousel-item"
-           style="height:36rem;
-                  background:#FADADD;
-                  text-shadow: 3px 3px 2px #787273;
-                  position: relative;
-                  font-size: 3rem;">
-          <div class="overlay-image"
-               style="background-image: url(static/images/pads.png);
-                      position: absolute;
-                      bottom:0;
-                      left:0;
-                      right:0;
-                      top:0;
-                      background-position:center;
-                      opacity: 0.7;">
-          </div>
-        <div class="container" style="position: absolute; bottom:0; left:0; right:0; padding-bottom:100px;">
-          <h1 style="font-size: 2rem;
-                     text-transform: uppercase;
-                     justify-content: center;
-                     display: flex;
-                     color: black;
-                     background-color: pink;
-                     letter-spacing: .1rem;">Feminine Hygiene
-          </h1>
-          <a href="{{ url_for('hygiene_products_page') }}" class ="btn" style="font-size: 2rem;
-                                          text-transform: uppercase;
-                                          justify-content: center;
-                                          display: flex;
-                                          color: black;
-                                          background-color: pink;
-                                          letter-spacing: .1rem;">Shop
-          </a>
-        </div>
-      </div>
+  <style>
+    .overlay-image {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      top: 0;
+      background-position: center;
+      opacity: 0.6;
+    }
+  </style>
+  <div class="container fixed-top" style="margin-top: 6rem; width: 576px; max-width: 90%; z-index: 5;">
+    {% include 'includes/flashed_messages.html' %}
   </div>
-</div>
+  <div id="productCarousel" class="h-100 carousel slide carousel-fade" data-bs-ride="carousel">
+    <ol class="carousel-indicators">
+      <li data-bs-target="#productCarousel" data-bs-slide-to="0" class="active"></li>
+      <li data-bs-target="#productCarousel" data-bs-slide-to="1"></li>
+      <li data-bs-target="#productCarousel" data-bs-slide-to="2"></li>
+    </ol>
+    <div class="carousel-inner h-100 bg-primary">
+      <div class="carousel-item h-100 active" style="position: relative;">
+        <div class="overlay-image" style="background-image: url('static/images/makeup.jpg'); background-size: cover;"></div>
+        <div class="container" style="position: absolute; bottom: 0; left: 0; right: 0; padding-bottom: 100px;">
+          <div class="card border-0 rounded-3" style="background-color: rgba(var(--bs-light-rgb), 0.8);">
+            <div class="card-body text-center">
+              <h1 class="display-3">FemInstant</h1>
+              <p class="fs-3">Feminine products in an Instant</p>
+              <a href="{{ url_for('products_page') }}" class="btn btn-lg btn-primary text-uppercase fs-3">Shop</a>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="carousel-item bg-primary h-100" style="position: relative;">
+        <div class="overlay-image" style="background-image: url('static/images/skincare.jpg'); background-size: cover; background-position-y: top;"></div>
+        <div class="container" style="position: absolute; bottom: 0; left: 0; right: 0; padding-bottom: 100px;">
+          <div class="card border-0 rounded-3" style="background-color: rgba(var(--bs-light-rgb), 0.8);">
+            <div class="card-body text-center">
+              <h1 class="display-3">Skincare</h1>
+              <p class="fs-3">From moisturisers to SPF, we've got your base covered</p>
+              <a href="{{ url_for('products_page', department='Skincare') }}" class="btn btn-lg btn-primary text-uppercase fs-3">Shop</a>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="carousel-item h-100 bg-primary" style="position: relative;">
+        <div class="overlay-image" style="background-image: url('static/images/hygiene.jpg');"></div>
+        <div class="container" style="position: absolute; bottom: 0; left: 0; right: 0; padding-bottom: 100px;">
+          <div class="card border-0 rounded-3" style="background-color: rgba(var(--bs-light-rgb), 0.8);">
+            <div class="card-body text-center">
+              <h1 class="display-3">Feminine Hygiene</h1>
+              <p class="fs-3">For all your hygiene needs on the go</p>
+              <a href="{{ url_for('products_page', department='Feminine Hygiene') }}" class="btn btn-lg btn-primary text-uppercase fs-3">Shop</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 {% endblock %}

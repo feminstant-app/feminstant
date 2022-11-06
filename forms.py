@@ -25,9 +25,5 @@ class CheckoutForm(FlaskForm):
     submit = SubmitField(label='Checkout')
 
 
-class BasketForm(FlaskForm):
-    submit = SubmitField(label='Add to basket', validators=[DataRequired()])
-
-
 class PaymentForm(FlaskForm):
     submit = SubmitField(label='Confirm Pay')

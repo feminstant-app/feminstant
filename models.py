@@ -1,12 +1,6 @@
 import datetime
 from flask_login import UserMixin
-from __init__ import db, login_manager, bcrypt, app
-from forms import BasketForm
-
-
-@login_manager.user_loader
-def load_user(user_id):
-    return Customer.query.get(int(user_id))
+from __init__ import app, db, bcrypt
 
 
 class Employee(db.Model):
@@ -40,13 +34,11 @@ class Item(db.Model):
     department = db.Column(db.String(length=75), nullable=False)
     description = db.Column(db.String(length=1500), nullable=False)
 
-
-
     def __repr__(self):
         return f'Item {self.name}'
 
-
-
+    def __hash__(self):
+        return hash(self.id)
 
 
 class Checkout(db.Model):
@@ -56,6 +48,7 @@ class Checkout(db.Model):
     inputAddress2 = db.Column(db.String(length=50), nullable=False)
     inputCity = db.Column(db.String(length=30), nullable=False)
     inputZip = db.Column(db.String(length=30), nullable=False)
+
 
 with app.app_context():
     db.create_all()
@@ -85,28 +78,8 @@ class CustomerOrder(db.Model):
     customer_id = db.Column(db.Integer, unique=False, nullable=False)
     Date_created = db.Column(db.DateTime(), nullable=False, default=datetime.datetime.utcnow())
 
-    def buy(self):
-        form = BasketForm()
-        if form.validate_on_submit:
-            item_in_basket = CustomerOrder(id=Item.id, invoice=32, status='ordered', customer_id=1)
-            Item.quantity -= 1
-            db.session.add(item_in_basket)
-            db.session.commit()
-            return redirect(url_for('home_page'))
-
     def __repr__(self):
         return'<CustomerOrder %r>' % self.invoice
-
-
-
-class ProductItem(db.Model):
-    id = db.Column(db.Integer,primary_key=True)
-    name = db.Column(db.String(64),unique=True)
-    descr = db.Column(db.Text,unique=True,nullable=True)
-    price = db.Column(db.Float,nullable=False)
-    cartitems = db.relationship('CartItem', backref='Product')
-    def __repr__(self):
-        return '<ProductName %r>' % self.name
 
 
 
