@@ -1,17 +1,10 @@
-from flask import Flask, render_template, flash, redirect, url_for
-from flask_sqlalchemy import SQLAlchemy
+from flask import flash, redirect, url_for, request, session
+from flask_login import login_user, logout_user
 from forms import RegisterForm, LoginForm, CheckoutForm
-from flask_bcrypt import Bcrypt
-from flask_login import LoginManager, login_user, UserMixin
-
-
-app = Flask(__name__)
-app.config['SECRET_KEY'] = 'ebd0469c4b70bf520c31c39a'
-app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://admin:admin@localhost/FemInstant'
-db = SQLAlchemy(app)
-db.init_app(app)
-bcrypt = Bcrypt(app)
-login_manager = LoginManager(app)
+from __init__ import app, db, login_manager
+from ex import stripe_keys
+from basket import initialise_basket, render_template_with_basket_quantity, get_items_from_basket, increase_item_quantity_in_basket, decrease_item_quantity_in_basket, get_basket_total
+from models import Item, Customer
 
 
 @login_manager.user_loader
@@ -19,77 +12,15 @@ def load_user(user_id):
     return Customer.query.get(int(user_id))
 
 
-class Employee(db.Model):
-    id = db.Column(db.Integer(), primary_key=True)
-    name = db.Column(db.String(length=30), nullable=False)
-
-
-class Customer(db.Model, UserMixin):
-    id = db.Column(db.Integer(), primary_key=True)
-    name = db.Column(db.String(length=30), nullable=False)
-    email = db.Column(db.String(length=100), nullable=False, unique=True)
-    password_hash = db.Column(db.LargeBinary, nullable=False)
-
-    @property
-    def password(self):
-        raise AttributeError("Plaintext password not stored")
-
-    @password.setter
-    def password(self, plaintext_password):
-        self.password_hash = bcrypt.generate_password_hash(plaintext_password)
-
-    def password_matches(self, plaintext_password):
-        return bcrypt.check_password_hash(self.password_hash, plaintext_password)
-
-    # def password_matches(self, plaintext_password):
-    #     return self.password_hash == str.encode(plaintext_password)
-
-
-class Item(db.Model):
-    id = db.Column(db.Integer(), primary_key=True)
-    name = db.Column(db.String(length=150), nullable=False, unique=True)
-    quantity = db.Column(db.Integer(), nullable=False)
-    price = db.Column(db.Integer(), nullable=False)
-    department = db.Column(db.String(length=75), nullable=False)
-    description = db.Column(db.String(length=1500), nullable=False)
-
-    def __repr__(self):
-        return f'Item {self.name}'
-
-
-class Cart(db.Model):
-    cart_id = db.Column(db.Integer(), primary_key=True)
-    cust_id = db.Column(db.Integer, db.ForeignKey(Customer.id))
-
-
-class CartDetail(db.Model):
-    cartDetail_id = db.Column(db.Integer(), primary_key=True)
-    cart_id = db.Column(db.Integer(), db.ForeignKey(Cart.cart_id))
-    cust_id = db.Column(db.Integer, db.ForeignKey(Customer.id))
-    item_id = db.Column(db.Integer, db.ForeignKey(Item.id))
-    quantity = db.Column(db.Integer)
-
-
-class Checkout(db.Model):
-    id = db.Column(db.Integer(), primary_key=True)
-    # cust_id = db.Column(db.Integer, db.ForeignKey(Customer.id))
-    inputAddress1 = db.Column(db.String(length=50), nullable=False)
-    inputAddress2 = db.Column(db.String(length=50), nullable=False)
-    inputCity = db.Column(db.String(length=30), nullable=False)
-    inputZip = db.Column(db.String(length=30), nullable=False)
-
-
-with app.app_context():
-    db.create_all()
-
-
 @app.route('/')
 @app.route('/home')
+@initialise_basket
 def home_page():
-    return render_template('index.html')
+    return render_template_with_basket_quantity('index.html')
 
 
 @app.route('/login', methods=['GET', 'POST'])
+@initialise_basket
 def login_page():
     form = LoginForm()
     if form.validate_on_submit():
@@ -97,25 +28,66 @@ def login_page():
         if matching_user and matching_user.password_matches(form.password.data):
             login_user(matching_user)
             flash('Success! You have logged in', category='success')
-            return redirect(url_for('products_page'))
+            return redirect(url_for('home_page'))
         else:
             flash('Username and Password do not match', category='danger')
-    return render_template('login.html', title='Log in', form=form)
+    return render_template_with_basket_quantity('login.html', title='Log in', form=form)
 
 
 @app.route('/register', methods=['GET', 'POST'])
+@initialise_basket
 def register():
     form = RegisterForm()
     if form.validate_on_submit():
-        user_to_create = Customer(name=form.name.data, email=form.email.data, password=form.password.data)
-        db.session.add(user_to_create)
-        db.session.commit()
-        flash(f'Account created successfully for {form.name.data}', category='success')
-        return redirect(url_for('login_page'))
-    return render_template('register.html', title='Register', form=form)
+        user_with_same_email = Customer.query.filter_by(email=form.email.data).first()
+        if user_with_same_email:
+            flash('An account with that email already exists', category='danger')
+        else:
+            user_to_create = Customer(name=form.name.data, email=form.email.data, password=form.password.data)
+            db.session.add(user_to_create)
+            db.session.commit()
+            login_user(user_to_create)
+            flash(f'Account created successfully for {form.name.data}', category='success')
+            return redirect(url_for('profile_page'))
+    return render_template_with_basket_quantity('register.html', title='Register', form=form)
 
 
+@app.route('/products')
+@initialise_basket
+def products_page():
+    department = request.args.get('department')
+    items = db.session.query(Item)
+    if department in ['Skincare', 'Makeup', 'Feminine Hygiene']:
+        items = items.filter_by(department=department)
+    return render_template_with_basket_quantity('products.html', items=items, department=department)
+
+
+@app.route('/increase_quantity/<item_id>', methods=['POST'])
+def increase_quantity_in_basket(item_id):
+    increase_item_quantity_in_basket(item_id)
+    if request.form.get('referrer').startswith(url_for('products_page')):
+        flash('Item added to basket', 'success')
+    return redirect(request.form.get('referrer'))
+
+
+@app.route('/decrease_quantity/<item_id>', methods=['POST'])
+def decrease_quantity_in_basket(item_id):
+    decrease_item_quantity_in_basket(item_id)
+    return redirect(request.form.get('referrer'))
+
+
+# TODO
+@app.route('/basket')
+@initialise_basket
+def basket_page():
+    items = get_items_from_basket()
+    basket_total = get_basket_total()
+    return render_template_with_basket_quantity('basket.html', items=items, basket_total=basket_total)
+
+
+# TODO
 @app.route('/checkout', methods=['GET', 'POST'])
+@initialise_basket
 def checkout_page():
     form = CheckoutForm()
     if form.validate_on_submit():
@@ -126,33 +98,52 @@ def checkout_page():
         db.session.commit()
         flash("Checkout complete", category='success')
         return redirect(url_for('home_page'))
-    return render_template('checkout.html', title='Checkout', form=form)
+    return render_template_with_basket_quantity('checkout.html', title='Checkout', form=form)
 
 
-@app.route('/hygiene')
-def hygiene_products_page():
-    items = db.session.query(Item).filter(Item.department == "Feminine Hygiene")
-    # print(items)
-    return render_template('Hygiene.html', items=items)
+# TODO
+@app.route('/payment')
+@initialise_basket
+def payment_page():
+    return render_template_with_basket_quantity('payment.html')
 
 
-@app.route('/makeup')
-def makeup_products_page():
-    items = db.session.query(Item).filter(Item.department == "Makeup")
-    # print(items)
-    return render_template('Makeup.html', items=items)
+@app.route('/logout', methods=['POST'])
+def logout_page():
+    logout_user()
+    flash('You have logged out successfully', category='success')
+    return redirect(url_for('home_page'))
 
 
-@app.route('/skincare')
-def skincare_products_page():
-    items = db.session.query(Item).filter(Item.department == "Skincare")
-    # print(items)
-    return render_template('skincare.html', items=items)
+# @app.route('/map')
+# def map_func():
+#     return render_template('map.html', apikey=api_key, latitude=latitude, longitude=longitude, address=address)
 
 
-@app.route('/profile')
-def profile():
-    return render_template('profile.html')
+@app.route('/pay')
+@initialise_basket
+def pay():
+    return render_template_with_basket_quantity('checkout1.html', key=stripe_keys['publishable_key'])
+
+
+@app.route('/charge', methods=['POST'])
+def charge():
+    # Amount in cents
+    amount = 500
+
+    customer = stripe.Customer.create(
+        email='customer@example.com',
+        source=request.form['stripeToken']
+    )
+
+    charge = stripe.Charge.create(
+        customer=customer.id,
+        amount=amount,
+        currency='usd',
+        description='Flask Charge'
+    )
+
+    return render_template_with_basket_quantity('charge.html', amount=amount)
 
 
 if __name__ == '__main__':
