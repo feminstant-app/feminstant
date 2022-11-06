@@ -1,5 +1,5 @@
 from flask_wtf import FlaskForm
-from wtforms import StringField, PasswordField, SubmitField
+from wtforms import StringField, PasswordField, SubmitField, IntegerField
 from wtforms.validators import DataRequired, length, equal_to, email
 
 
@@ -25,5 +25,9 @@ class CheckoutForm(FlaskForm):
     submit = SubmitField(label='Checkout')
 
 
+class BasketForm(FlaskForm):
+    submit = SubmitField(label='Add to basket', validators=[DataRequired()])
+
+
 class PaymentForm(FlaskForm):
-    pass
+    submit = SubmitField(label='Confirm Pay')

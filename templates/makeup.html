@@ -6,7 +6,8 @@ PRODUCTS
 {% endblock %}
 
 {% block content %}
-    <table class="table table-hover table-light">
+    {% include 'includes/items_modals.html' %}
+    <table class="table table-hover table-light" style="margin-top: 20px;">
     <thead>
         <tr>
             <!-- Your Columns HERE -->
@@ -21,6 +22,7 @@ PRODUCTS
     <tbody style="background-color: #FADADD">
         <!-- rows inside the table HERE: -->
         {% for item in items %}
+        {% include 'includes/items_modals.html' %}
             <tr>
                 <td>{{ item.id }}</td>
                 <td>{{ item.name }}</td>
@@ -29,6 +31,8 @@ PRODUCTS
                 <td>{{ item.description }}</td>
                 <td>
                     <button class="btn"
+                            data-bs-toggle="modal"
+                            data-bs-target="#exampleModal-{{ items.id }}"
                             style="font-size: 1rem;
                                    text-transform: uppercase;
                                    background-color: pink;

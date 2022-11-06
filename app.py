@@ -1,73 +1,10 @@
-from flask import Flask, render_template, flash, redirect, url_for
-from flask_sqlalchemy import SQLAlchemy
-from forms import RegisterForm, LoginForm, CheckoutForm
-from flask_bcrypt import Bcrypt
-from flask_login import LoginManager, login_user, UserMixin, logout_user, login_required
-
-
-app = Flask(__name__)
-app.config['SECRET_KEY'] = 'ebd0469c4b70bf520c31c39a'
-app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://admin:admin@localhost/FemInstant'
-db = SQLAlchemy(app)
-db.init_app(app)
-bcrypt = Bcrypt(app)
-login_manager = LoginManager(app)
-
-
-@login_manager.user_loader
-def load_user(user_id):
-    return Customer.query.get(int(user_id))
-
-
-class Employee(db.Model):
-    id = db.Column(db.Integer(), primary_key=True)
-    name = db.Column(db.String(length=30), nullable=False)
-
-
-class Customer(db.Model, UserMixin):
-    id = db.Column(db.Integer(), primary_key=True)
-    name = db.Column(db.String(length=30), nullable=False)
-    email = db.Column(db.String(length=100), nullable=False, unique=True)
-    password_hash = db.Column(db.LargeBinary, nullable=False)
-
-    @property
-    def password(self):
-        raise AttributeError("Plaintext password not stored")
-
-    @password.setter
-    def password(self, plaintext_password):
-        self.password_hash = bcrypt.generate_password_hash(plaintext_password)
-
-    def password_matches(self, plaintext_password):
-        return bcrypt.check_password_hash(self.password_hash, plaintext_password)
-
-    # def password_matches(self, plaintext_password):
-    #     return self.password_hash == str.encode(plaintext_password)
-
-
-class Item(db.Model):
-    id = db.Column(db.Integer(), primary_key=True)
-    name = db.Column(db.String(length=150), nullable=False, unique=True)
-    quantity = db.Column(db.Integer(), nullable=False)
-    price = db.Column(db.Integer(), nullable=False)
-    department = db.Column(db.String(length=75), nullable=False)
-    description = db.Column(db.String(length=1500), nullable=False)
-
-    def __repr__(self):
-        return f'Item {self.name}'
-
-
-class Checkout(db.Model):
-    id = db.Column(db.Integer(), primary_key=True)
-    # cust_id = db.Column(db.Integer, db.ForeignKey(Customer.id))
-    inputAddress1 = db.Column(db.String(length=50), nullable=False)
-    inputAddress2 = db.Column(db.String(length=50), nullable=False)
-    inputCity = db.Column(db.String(length=30), nullable=False)
-    inputZip = db.Column(db.String(length=30), nullable=False)
-
-
-with app.app_context():
-    db.create_all()
+from flask import Flask, render_template, flash, redirect, url_for, request
+from forms import RegisterForm, LoginForm, CheckoutForm, BasketForm
+from flask_login import login_user, logout_user, login_required
+from ex import stripe_keys
+from models import *
+from __init__ import app
+import datetime
 
 
 @app.route('/')
@@ -104,7 +41,7 @@ def register():
 
 
 @app.route('/checkout', methods=['GET', 'POST'])
-@login_required
+# @login_required
 def checkout_page():
     form = CheckoutForm()
     if form.validate_on_submit():
@@ -123,25 +60,26 @@ def profile_page():
     return render_template('profile.html')
 
 
-@app.route('/hygiene')
+@app.route('/hygiene', methods=['GET', 'POST'])
 def hygiene_products_page():
+    basket_form = BasketForm()
+    Buy()
     items = db.session.query(Item).filter(Item.department == "Feminine Hygiene")
-    # print(items)
-    return render_template('Hygiene.html', items=items)
+    return render_template('Hygiene.html', items=items, basket_form=basket_form)
 
 
-@app.route('/makeup')
+@app.route('/makeup', methods=['GET', 'POST'])
 def makeup_products_page():
+    basket_form = BasketForm()
     items = db.session.query(Item).filter(Item.department == "Makeup")
-    # print(items)
-    return render_template('Makeup.html', items=items)
+    return render_template('makeup.html', items=items, basket_form=basket_form)
 
 
-@app.route('/skincare')
+@app.route('/skincare', methods=['GET', 'POST'])
 def skincare_products_page():
+    basket_form = BasketForm()
     items = db.session.query(Item).filter(Item.department == "Skincare")
-    # print(items)
-    return render_template('skincare.html', items=items)
+    return render_template('skincare.html', items=items, basket_form=basket_form)
 
 
 @app.route('/payment')
@@ -154,6 +92,36 @@ def logout_page():
     logout_user()
     flash('You have logged out successfully', category='info')
     return redirect(url_for('home_page'))
+
+
+@app.route('/map')
+def map_func():
+    return render_template('map.html', apikey=api_key, latitude=latitude, longitude=longitude, address=address)
+
+
+@app.route('/pay')
+def pay():
+    return render_template('checkout1.html', key=stripe_keys['publishable_key'])
+
+
+@app.route('/charge', methods=['POST'])
+def charge():
+    # Amount in cents
+    amount = 500
+
+    customer = stripe.Customer.create(
+        email='customer@example.com',
+        source=request.form['stripeToken']
+    )
+
+    charge = stripe.Charge.create(
+        customer=customer.id,
+        amount=amount,
+        currency='usd',
+        description='Flask Charge'
+    )
+
+    return render_template('charge.html', amount=amount)
 
 
 if __name__ == '__main__':

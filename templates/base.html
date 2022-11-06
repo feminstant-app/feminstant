@@ -14,23 +14,22 @@
       }
     </style>
   </head>
-<!--  <div>-->
-<!--<img src="static/images/images.jpeg"></div>-->
+
   <body class="h-100 d-flex flex-column"
         style="background-color: #FADADD">
     <nav class="navbar navbar-expand-lg bg-light; background-color: #695B5C;">
       <div class="container-fluid">
-        <a class="navbar-brand" href="{{ url_for('home_page') }}">FemInstant</a>
+        <a class="navbar-brand" style="font-size:2rem;" href="{{ url_for('home_page') }}">FemInstant</a>
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNavDropdown" aria-controls="navbarNavDropdown" aria-expanded="false" aria-label="Toggle navigation">
           <span class="navbar-toggler-icon"></span>
         </button>
         <div class="collapse navbar-collapse" id="navbarNavDropdown">
           <ul class="navbar-nav me-auto">
             <li class="nav-item">
-              <a class="nav-link" href="#">About</a>
+              <a class="nav-link" style="font-size:1.2rem;" href="#">About</a>
             </li>
             <li class="nav-item dropdown">
-              <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+              <a class="nav-link dropdown-toggle" style="font-size:1.2rem;" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                 Products
               </a>
               <ul class="dropdown-menu">
@@ -40,7 +39,7 @@
               </ul>
             </li>
             <li class="nav-item">
-              <a class="nav-link" href="#">FemFamily</a>
+              <a class="nav-link" style="font-size:1.2rem;" href="#">FemFamily</a>
             </li>
           </ul>
             {% if current_user.is_authenticated %}
