@@ -1,6 +1,7 @@
 from flask_wtf import FlaskForm
 from wtforms import StringField, PasswordField, SubmitField, ValidationError
 from wtforms.validators import DataRequired, length, equal_to, email
+from utils.postcodes import PostcodeManager
 
 
 class RegisterForm(FlaskForm):
@@ -21,7 +22,7 @@ class CheckoutForm(FlaskForm):
     house = StringField(label='House Name or Number')
     street = StringField(label='Street')
     city = StringField(label='Town or City')
-    postcode = StringField(label='Post Code', validators=[DataRequired(), length(min=6, max=8)])
+    postcode = StringField(label='Post Code')
     submit = SubmitField(label='Go to Payment')
 
     def validate_house(form, field):
@@ -35,3 +36,8 @@ class CheckoutForm(FlaskForm):
     def validate_city(form, field):
         if len(field.data) < 1:
             raise ValidationError("That isn't a valid city")
+
+    def validate_postcode(form, field):
+        is_valid_postcode = PostcodeManager.is_valid_postcode(field.data)
+        if not is_valid_postcode:
+            raise ValidationError("That isn't a valid postcode")

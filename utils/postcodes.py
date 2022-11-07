@@ -8,10 +8,16 @@ class PostcodeManager:
         self.api_key = GEOAPIFY_API_KEY
 
     @staticmethod
+    def is_valid_postcode(postcode):
+        try:
+            return requests.get(f'https://api.postcodes.io/postcodes/{postcode}/validate').json()['result']
+        except (KeyError, requests.exceptions.RequestException):
+            return True  # if the api fails, then don't prevent the user from moving forward
+
+    @staticmethod
     def get_location_from_postcode(postcode):
         try:
-            is_valid_postcode = requests.get(f'https://api.postcodes.io/postcodes/{postcode}/validate').json()['result']
-            if is_valid_postcode:
+            if PostcodeManager.is_valid_postcode(postcode):
                 postcode_data = requests.get(f'https://api.postcodes.io/postcodes/{postcode}').json()['result']
                 return postcode_data['latitude'], postcode_data['longitude']
             else:

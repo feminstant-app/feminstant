@@ -140,6 +140,7 @@ def checkout_payment_page():
 
 
 @app.route('/checkout/complete', methods=['GET', 'POST'])
+@initialise_basket
 def checkout_complete_page():
     if request.method == 'POST':
         items = get_items_from_basket(session['basket'])
