@@ -18,8 +18,20 @@ class LoginForm(FlaskForm):
 
 
 class CheckoutForm(FlaskForm):
-    address_line_1 = StringField(label='Address Line 1', validators=[DataRequired()])
-    address_line_2 = StringField(label='Address Line 2', validators=[DataRequired()])
-    city = StringField(label='City', validators=[DataRequired()])
-    postcode = StringField(label='Post Code', validators=[DataRequired()])
+    house = StringField(label='House Name or Number')
+    street = StringField(label='Street')
+    city = StringField(label='Town or City')
+    postcode = StringField(label='Post Code', validators=[DataRequired(), length(min=6, max=8)])
     submit = SubmitField(label='Go to Payment')
+
+    def validate_house(form, field):
+        if len(field.data) < 1:
+            raise ValidationError("That isn't a valid house name or number")
+
+    def validate_street(form, field):
+        if len(field.data) < 1:
+            raise ValidationError("That isn't a valid street")
+
+    def validate_city(form, field):
+        if len(field.data) < 1:
+            raise ValidationError("That isn't a valid city")

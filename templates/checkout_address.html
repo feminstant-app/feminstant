@@ -16,49 +16,56 @@
           {{ form.hidden_tag() }}
           <h3 class="text-center">Your Delivery Address</h3>
           <div class="mb-3">
-            {{ form.address_line_1.label(class="form-label") }}
-            {% if form.address_line_1.errors %}
-              {{ form.address_line_1(class="form-control is-invalid") }}
-              {% for error in form.address_line_1.errors %}
+            {{ form.house.label(class="form-label") }}
+            {% if form.house.errors %}
+              {{ form.house(class="form-control is-invalid", value=house) }}
+              {% for error in form.house.errors %}
                 <span>{{ error }}</span>
               {% endfor %}
             {% else %}
-              {{ form.address_line_1(class="form-control") }}
+              {{ form.house(class="form-control", value=house) }}
             {% endif %}
           </div>
           <div class="mb-3">
-            {{ form.address_line_2.label(class="form-label") }}
-            {% if form.address_line_2.errors %}
-              {{ form.address_line_2(class="form-control is-invalid") }}
-              {% for error in form.address_line_2.errors %}
+            {{ form.street.label(class="form-label") }}
+            {% if form.street.errors %}
+              {{ form.street(class="form-control is-invalid", value=street) }}
+              {% for error in form.street.errors %}
                 <span>{{ error }}</span>
               {% endfor %}
             {% else %}
-              {{ form.address_line_2(class="form-control") }}
+              {{ form.street(class="form-control", value=street) }}
             {% endif %}
           </div>
           <div class="row">
-            <div class="col-sm-8 mb-3">
+            <div class="col-sm mb-3">
               {{ form.city.label(class="form-label") }}
               {% if form.city.errors %}
-                {{ form.city(class="form-control is-invalid") }}
+                {{ form.city(class="form-control is-invalid", value=city) }}
                 {% for error in form.city.errors %}
                   <span>{{ error }}</span>
                 {% endfor %}
               {% else %}
-                {{ form.city(class="form-control") }}
+                {{ form.city(class="form-control", value=city) }}
               {% endif %}
             </div>
-            <div class="col-sm-4 mb-3">
-              {{ form.postcode.label(class="form-label") }}
-              {% if form.postcode.errors %}
-                {{ form.postcode(class="form-control is-invalid") }}
-                {% for error in form.postcode.errors %}
-                  <span>{{ error }}</span>
-                {% endfor %}
-              {% else %}
-                {{ form.postcode(class="form-control") }}
-              {% endif %}
+            <div class="col-sm">
+              <div class="row">
+                <div class="col mb-3">
+                  {{ form.postcode.label(class="form-label") }}
+                  {% if form.postcode.errors %}
+                    {{ form.postcode(class="form-control is-invalid", value=postcode) }}
+                    {% for error in form.postcode.errors %}
+                      <span>{{ error }}</span>
+                    {% endfor %}
+                  {% else %}
+                    {{ form.postcode(class="form-control", value=postcode) }}
+                  {% endif %}
+                </div>
+                <div class="col d-flex align-items-end">
+                  <button type="submit" formaction="{{ url_for('autofill_address') }}" class="btn btn-success d-block w-100 mb-3">Find address</button>
+                </div>
+              </div>
             </div>
           </div>
           <div class="mt-3">
