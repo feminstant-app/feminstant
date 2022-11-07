@@ -3,7 +3,7 @@ from flask_login import login_user, logout_user, current_user
 from utils.forms import RegisterForm, LoginForm, CheckoutForm
 from datetime import date
 
-from __init__ import app, db, login_manager
+from __init__ import app, db, login_manager, postcode_manager
 from utils.basket import initialise_basket, render_template_with_basket_quantity, get_items_from_basket, \
     increase_item_quantity_in_basket, decrease_item_quantity_in_basket, get_basket_total
 from utils.models import Item, Customer, Order, order_items
@@ -98,16 +98,36 @@ def basket_page():
 @initialise_basket
 def checkout_address_page():
     form = CheckoutForm()
-    basket_total = get_basket_total(session['basket'])
     if form.validate_on_submit():
         session['address'] = {
-            'address_line_1': form.address_line_1.data,
-            'address_line_2': form.address_line_2.data,
+            'house': form.house.data,
+            'street': form.street.data,
             'city': form.city.data,
             'postcode': form.postcode.data,
         }
         return redirect(url_for('checkout_payment_page'))
-    return render_template_with_basket_quantity('checkout_address.html', title='Checkout', form=form, basket_total=basket_total)
+    basket_total = get_basket_total(session['basket'])
+    house = session['address'].get('house') or '' if 'address' in session else ''
+    street = session['address'].get('street') or '' if 'address' in session else ''
+    city = session['address'].get('city') or '' if 'address' in session else ''
+    postcode = session['address'].get('postcode') or '' if 'address' in session else ''
+    return render_template_with_basket_quantity('checkout_address.html', title='Checkout', form=form, basket_total=basket_total,
+                                                house=house, street=street, city=city, postcode=postcode)
+
+
+@app.route('/checkout/address/autofill', methods=['POST'])
+def autofill_address():
+    form = CheckoutForm()
+    if form.is_submitted():
+        postcode = form.postcode.data
+        street, city = postcode_manager.get_street_and_city_from_postcode(postcode)
+        session['address'] = {
+            'house': form.house.data,
+            'street': street or form.street.data,
+            'city': city or form.city.data,
+            'postcode': postcode,
+        }
+    return redirect(url_for('checkout_address_page'))
 
 
 @app.route('/checkout/payment')
@@ -125,8 +145,8 @@ def checkout_complete_page():
         items = get_items_from_basket(session['basket'])
         order = Order(user_id=current_user.id if current_user.is_authenticated else None,
                       date=date.today(),
-                      address_line_1=session['address']['address_line_1'],
-                      address_line_2=session['address']['address_line_2'],
+                      house=session['address']['house'],
+                      street=session['address']['street'],
                       city=session['address']['city'],
                       postcode=session['address']['postcode'])
         db.session.add(order)
@@ -140,7 +160,8 @@ def checkout_complete_page():
             db.session.execute(order_item_additions)
         db.session.commit()
         session['previous_basket'] = session['basket']
-        session['basket'] = {}
+        session.pop('basket')
+        session.pop('address')
         return redirect(url_for('checkout_complete_page'))
     if 'previous_basket' not in session:
         return redirect(url_for('home_page'))

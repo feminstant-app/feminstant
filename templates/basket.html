@@ -35,7 +35,9 @@
         </ul>
         <p class="lead text-center mt-2 mb-0">Total price</p>
         <input type="text" class="form-control form-control-lg text-center" value="£{{ basket_total }}" readonly>
-        <a role="button" href="{{ url_for('checkout_address_page') }}" class="btn btn-primary d-block mt-3 mx-auto">Proceed to checkout</a>
+        {% if basket_total > 0 %}
+          <a role="button" href="{{ url_for('checkout_address_page') }}" class="btn btn-primary d-block mt-3 mx-auto">Proceed to checkout</a>
+        {% endif %}
       </div>
     </div>
   </div>
