@@ -57,7 +57,7 @@ def register():
             db.session.commit()
             login_user(user_to_create)
             flash(f'Account created successfully for {form.name.data}', category='success')
-            return redirect(url_for('profile_page'))
+            return redirect(url_for('home_page'))
     return render_template_with_basket_quantity('register.html', title='Register', form=form)
 
 
