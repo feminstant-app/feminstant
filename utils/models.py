@@ -1,5 +1,5 @@
 from flask_login import UserMixin
-from __init__ import app, db, bcrypt
+from base import app, db, bcrypt
 
 
 class Item(db.Model):

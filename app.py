@@ -3,7 +3,7 @@ from flask_login import login_user, logout_user, current_user
 from utils.forms import RegisterForm, LoginForm, CheckoutForm
 from datetime import date
 
-from __init__ import app, db, login_manager, postcode_manager
+from base import app, db, login_manager, postcode_manager
 from utils.basket import initialise_basket, render_template_with_basket_quantity, get_items_from_basket, \
     increase_item_quantity_in_basket, decrease_item_quantity_in_basket, get_basket_total
 from utils.models import Item, Customer, Order, order_items
