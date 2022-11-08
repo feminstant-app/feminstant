@@ -1,4 +1,4 @@
-from __init__ import app, db
+from base import app, db
 from utils.models import Item, Customer
 
 
