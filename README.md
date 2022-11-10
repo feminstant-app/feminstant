@@ -18,6 +18,7 @@ On PyCharm:
     - Bcrypt 
     - Email-validator 
     - Requests
+    - Stripe
 2. Create a new python file called `config.py` and paste the context of the separate document sent to instructors (not uploaded on github) with the secret keys and passwords. 
 3. Run the `sample_data.py` file
 4. Run `app.py`
