@@ -7,6 +7,7 @@ from base import app, db, login_manager, postcode_manager
 from utils.basket import initialise_basket, render_template_with_basket_quantity, get_items_from_basket, \
     increase_item_quantity_in_basket, decrease_item_quantity_in_basket, get_basket_total
 from utils.models import Item, Customer, Order, order_items
+from utils.payment import add_stripe_charge
 from config import STRIPE_PUBLISHABLE_KEY
 
 
@@ -57,7 +58,7 @@ def register():
             db.session.commit()
             login_user(user_to_create)
             flash(f'Account created successfully for {form.name.data}', category='success')
-            return redirect(url_for('profile_page'))
+            return redirect(url_for('home_page'))
     return render_template_with_basket_quantity('register.html', title='Register', form=form)
 
 
@@ -144,6 +145,8 @@ def checkout_payment_page():
 def checkout_complete_page():
     if request.method == 'POST':
         items = get_items_from_basket(session['basket'])
+        basket_total = get_basket_total(session['basket'])
+        add_stripe_charge(request.form['stripeEmail'], basket_total, request.form['stripeToken'])
         order = Order(user_id=current_user.id if current_user.is_authenticated else None,
                       date=date.today(),
                       house=session['address']['house'],
